@@ -1,0 +1,6 @@
+{
+  "name": "Victron Cloud",
+  "country": "ALL",
+  "domains": ["integration"],
+  "render_readme": true
+}
