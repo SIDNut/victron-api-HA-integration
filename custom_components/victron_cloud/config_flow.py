@@ -33,10 +33,9 @@ from .sensors import DEFAULT_SENSOR_KEYS, SENSOR_MAP
 STEP_USER_DATA_SCHEMA = vol.Schema({vol.Required(CONF_API_TOKEN): str})
 
 
-class VictronConfigFlow(config_entries.ConfigFlow):
+class VictronConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Victron Cloud."""
 
-    domain = DOMAIN
     VERSION = 1
 
     def __init__(self) -> None:
