@@ -1,6 +1,6 @@
 # Victron Cloud Home Assistant integration
 
-This repository contains a Home Assistant custom integration that connects to the Victron VRM cloud API. It replaces the manual REST sensors with a guided configuration flow, automatic entity creation and secure token storage. The integration can be installed through [HACS](https://hacs.xyz/) and exposes the most common Victron metrics as Home Assistant sensors.
+This repository contains a Home Assistant custom integration that connects to the Victron VRM cloud API. It replaces the manual REST sensors with a guided configuration flow, automatic entity creation, and secure token storage. The integration can be installed through [HACS](https://hacs.xyz/) and exposes the most common Victron metrics as Home Assistant sensors.
 
 ## Features
 
@@ -51,6 +51,10 @@ By default the integration creates the following entities (you can enable/disabl
 
 You can adjust the list of sensors and the polling interval from the integration options menu.
 
+## Re-authentication
+
+If the VRM API token expires or is revoked you will be prompted to re-authenticate. Provide a new API token in the flow and the integration will update the stored credentials and reload automatically.
+
 ## Development
 
 The file `victron_extracted_data_formatted.csv` contains a comprehensive mapping of VRM attribute IDs that was used while building the integration. It can be used as a reference for extending the integration with additional sensors.
@@ -59,4 +63,3 @@ The file `victron_extracted_data_formatted.csv` contains a comprehensive mapping
 
 - Victron Energy for providing the VRM API
 - The Home Assistant community for tooling and examples that inspired this integration
-

@@ -19,7 +19,8 @@ from .const import (
     PLATFORMS,
 )
 from .coordinator import VictronDataUpdateCoordinator
-from .sensors import SENSOR_MAP, DEFAULT_SENSOR_KEYS
+from .models import VictronConfigEntry, VictronRuntimeData
+from .sensors import DEFAULT_SENSOR_KEYS, SENSOR_MAP
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,10 +32,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: VictronConfigEntry) -> bool:
     """Set up Victron Cloud from a config entry."""
-
-    hass.data.setdefault(DOMAIN, {})
 
     api_token: str = entry.data[CONF_API_TOKEN]
     api_client = VictronApiClient(hass, api_token)
@@ -71,10 +70,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data[DOMAIN][entry.entry_id] = {
-        "coordinator": coordinator,
-        "descriptions": descriptions,
-    }
+    entry.runtime_data = VictronRuntimeData(
+        coordinator=coordinator,
+        descriptions=tuple(descriptions),
+    )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -83,12 +82,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: VictronConfigEntry) -> bool:
     """Unload a Victron Cloud config entry."""
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
+        entry.runtime_data = None
     return unload_ok
 
 

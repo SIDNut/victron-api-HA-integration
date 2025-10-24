@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Callable, Iterable
+from typing import Iterable
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
-    SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import ELECTRIC_CURRENT_AMPERE, ELECTRIC_POTENTIAL_VOLT, ENERGY_KILO_WATT_HOUR, POWER_WATT
+from homeassistant.const import (
+    ELECTRIC_CURRENT_AMPERE,
+    ELECTRIC_POTENTIAL_VOLT,
+    ENERGY_KILO_WATT_HOUR,
+    POWER_WATT,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -25,19 +27,10 @@ from .const import (
     CONF_INSTALLATION_NAME,
     DOMAIN,
 )
+from .models import VictronConfigEntry, VictronSensorEntityDescription
 
 if False:  # pragma: no cover - satisfy typing for circular import
     from .coordinator import VictronDataUpdateCoordinator
-
-
-@dataclass(frozen=True, kw_only=True)
-class VictronSensorEntityDescription(SensorEntityDescription):
-    """Describes a Victron sensor entity."""
-
-    attribute_id: int | None = None
-    requires: tuple[int, ...] = ()
-    value_fn: Callable[[dict[int, StateType]], StateType] | None = None
-    available_fn: Callable[[dict[int, StateType]], bool] | None = None
 
 
 BATTERY_STATE_MAP: dict[int, str] = {
@@ -213,14 +206,16 @@ DEFAULT_SENSOR_KEYS: list[str] = [description.key for description in SENSOR_DESC
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: VictronConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the Victron Cloud sensors."""
 
-    data = hass.data[DOMAIN][entry.entry_id]
-    coordinator: "VictronDataUpdateCoordinator" = data["coordinator"]
-    descriptions: Iterable[VictronSensorEntityDescription] = data["descriptions"]
+    runtime_data = entry.runtime_data
+    assert runtime_data is not None
+
+    coordinator = runtime_data.coordinator
+    descriptions: Iterable[VictronSensorEntityDescription] = runtime_data.descriptions
 
     entities: list[VictronSensor] = [
         VictronSensor(coordinator, entry, description) for description in descriptions
@@ -237,7 +232,7 @@ class VictronSensor(CoordinatorEntity["VictronDataUpdateCoordinator"], SensorEnt
     def __init__(
         self,
         coordinator: "VictronDataUpdateCoordinator",
-        entry: ConfigEntry,
+        entry: VictronConfigEntry,
         description: VictronSensorEntityDescription,
     ) -> None:
         super().__init__(coordinator)

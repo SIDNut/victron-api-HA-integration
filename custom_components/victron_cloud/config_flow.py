@@ -26,6 +26,7 @@ from .const import (
     ERROR_CANNOT_CONNECT,
     ERROR_INVALID_AUTH,
     ERROR_NO_INSTALLATIONS,
+    MIN_SCAN_INTERVAL,
 )
 from .sensors import DEFAULT_SENSOR_KEYS, SENSOR_MAP
 
@@ -41,6 +42,7 @@ class VictronConfigFlow(config_entries.ConfigFlow):
     def __init__(self) -> None:
         self._installations: list[dict[str, Any]] = []
         self._api_token: str | None = None
+        self._reauth_entry: config_entries.ConfigEntry | None = None
 
     async def async_step_user(self, user_input: Mapping[str, Any] | None = None) -> FlowResult:
         """Handle the initial step where the user enters the API token."""
@@ -49,21 +51,14 @@ class VictronConfigFlow(config_entries.ConfigFlow):
 
         if user_input is not None:
             api_token = user_input[CONF_API_TOKEN].strip()
-            client = VictronApiClient(self.hass, api_token)
+            installations, error = await self._async_fetch_installations(api_token)
 
-            try:
-                installations = await client.async_get_installations()
-            except VictronApiAuthError:
-                errors["base"] = ERROR_INVALID_AUTH
-            except VictronApiError:
-                errors["base"] = ERROR_CANNOT_CONNECT
+            if error is not None:
+                errors["base"] = error
             else:
-                if not installations:
-                    errors["base"] = ERROR_NO_INSTALLATIONS
-                else:
-                    self._installations = installations
-                    self._api_token = api_token
-                    return await self.async_step_installation()
+                self._installations = installations
+                self._api_token = api_token
+                return await self.async_step_installation()
 
         return self.async_show_form(
             step_id="user",
@@ -141,6 +136,62 @@ class VictronConfigFlow(config_entries.ConfigFlow):
             },
         )
 
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> FlowResult:
+        """Handle the start of a re-authentication flow."""
+
+        entry_id = self.context.get("entry_id")
+        if entry_id is not None:
+            self._reauth_entry = self.hass.config_entries.async_get_entry(entry_id)
+        self._api_token = entry_data.get(CONF_API_TOKEN)
+
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: Mapping[str, Any] | None = None
+    ) -> FlowResult:
+        """Prompt the user to confirm new credentials."""
+
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            api_token = user_input[CONF_API_TOKEN].strip()
+            _, error = await self._async_fetch_installations(api_token)
+
+            if error is None and self._reauth_entry is not None:
+                self.hass.config_entries.async_update_entry(
+                    self._reauth_entry,
+                    data={**self._reauth_entry.data, CONF_API_TOKEN: api_token},
+                )
+                await self.hass.config_entries.async_reload(self._reauth_entry.entry_id)
+                return self.async_abort(reason="reauth_successful")
+
+            errors["base"] = error or ERROR_CANNOT_CONNECT
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
+        )
+
+    async def _async_fetch_installations(
+        self, api_token: str
+    ) -> tuple[list[dict[str, Any]], str | None]:
+        """Validate the API token and fetch installations."""
+
+        client = VictronApiClient(self.hass, api_token)
+
+        try:
+            installations = await client.async_get_installations()
+        except VictronApiAuthError:
+            return [], ERROR_INVALID_AUTH
+        except VictronApiError:
+            return [], ERROR_CANNOT_CONNECT
+
+        if not installations:
+            return [], ERROR_NO_INSTALLATIONS
+
+        return installations, None
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
@@ -172,7 +223,7 @@ class VictronOptionsFlowHandler(config_entries.OptionsFlow):
                 errors[CONF_SENSORS] = "select_sensor"
             else:
                 scan_interval = int(user_input[CONF_SCAN_INTERVAL])
-                if scan_interval < 30:
+                if scan_interval < MIN_SCAN_INTERVAL:
                     errors[CONF_SCAN_INTERVAL] = "interval_too_short"
                 else:
                     return self.async_create_entry(
@@ -204,7 +255,7 @@ class VictronOptionsFlowHandler(config_entries.OptionsFlow):
                 ),
                 vol.Required(CONF_SCAN_INTERVAL, default=scan_interval_default): selector.NumberSelector(
                     selector.NumberSelectorConfig(
-                        min=30,
+                        min=MIN_SCAN_INTERVAL,
                         max=3600,
                         unit_of_measurement="seconds",
                         mode=selector.NumberSelectorMode.BOX,
@@ -218,3 +269,4 @@ class VictronOptionsFlowHandler(config_entries.OptionsFlow):
             data_schema=data_schema,
             errors=errors,
         )
+

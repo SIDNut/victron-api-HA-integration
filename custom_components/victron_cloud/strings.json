@@ -16,6 +16,13 @@
           "installation_id": "Installation",
           "device_instance": "Device instance"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect to Victron Cloud",
+        "description": "The existing API token is no longer valid. Enter a new token from the Victron VRM portal.",
+        "data": {
+          "api_token": "API token"
+        }
       }
     },
     "error": {
@@ -26,6 +33,9 @@
       "invalid_device_instance": "Enter a numeric device instance.",
       "select_sensor": "Select at least one sensor.",
       "interval_too_short": "Choose a scan interval of at least 30 seconds."
+    },
+    "abort": {
+      "reauth_successful": "Authentication updated successfully."
     }
   },
   "options": {

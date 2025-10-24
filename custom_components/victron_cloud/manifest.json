@@ -2,10 +2,11 @@
   "domain": "victron_cloud",
   "name": "Victron Cloud",
   "version": "0.1.0",
-  "documentation": "https://github.com/your-org/victron-api-HA-integration",
-  "issue_tracker": "https://github.com/your-org/victron-api-HA-integration/issues",
+  "documentation": "https://github.com/victronenergy/victron-api-HA-integration",
+  "issue_tracker": "https://github.com/victronenergy/victron-api-HA-integration/issues",
   "requirements": [],
-  "codeowners": ["@your-github-username"],
+  "codeowners": ["@victronenergy"],
   "config_flow": true,
-  "iot_class": "cloud_polling"
+  "iot_class": "cloud_polling",
+  "integration_type": "service"
 }

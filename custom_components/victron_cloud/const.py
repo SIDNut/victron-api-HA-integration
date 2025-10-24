@@ -17,6 +17,7 @@ CONF_SCAN_INTERVAL = "scan_interval"
 CONF_SENSORS = "sensors"
 
 DEFAULT_SCAN_INTERVAL = timedelta(minutes=1)
+MIN_SCAN_INTERVAL = 30
 DEFAULT_DEVICE_INSTANCE = 0
 
 API_BASE_URL = "https://vrmapi.victronenergy.com/v2"
