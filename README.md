@@ -1,33 +1,65 @@
-# Victron API HA Integration
+# Victron Cloud Home Assistant integration
 
-This repository contains resources and instructions for integrating Victron Cloud API sensors into Home Assistant. It includes various examples, configurations, and guides for fetching and utilizing data from the Victron API.
+This repository contains a Home Assistant custom integration that connects to the Victron VRM cloud API. It replaces the manual REST sensors with a guided configuration flow, automatic entity creation, and secure token storage. The integration can be installed through [HACS](https://hacs.xyz/) and exposes the most common Victron metrics as Home Assistant sensors.
 
-## Overview
+## Features
 
-I used the following API request to retrieve various data points from the Victron Energy platform using different `attributeId` values. These `attributeId` values correspond to specific data points related to the installation, such as battery status, power production, and other measurements.
+- Step-by-step setup flow that walks you through creating a VRM API token and selecting your installation
+- Secure storage of the API token in Home Assistant's config entry storage
+- Configurable polling interval and selectable sensors
+- Derived sensors for solar/battery currents and power
+- Device metadata populated from your Victron installation
 
-To obtain the complete list of `attributeId` values, I reverse-engineered the API by making individual requests for each ID, which allowed me to compile a full list of sensors and their corresponding IDs.
+## Prerequisites
 
-## Example API Request
+1. A Victron VRM account with access to the installation you want to monitor
+2. An API token created in the VRM portal under **My account → Integrations** ([direct link](https://vrm.victronenergy.com/profile/integrations))
+3. The GX device instance number for the installation (available from the Device List in the VRM portal)
 
-The following `curl` command retrieves data from the Victron API. You need to replace the placeholders with the actual values specific to your installation:
+## Installation (HACS)
 
-```bash
-curl --request GET \
-  --url 'https://vrmapi.victronenergy.com/v2/installations/{installation_id}/widgets/Graph?attributeIds%5B%5D={attribute_id}&instance={instance_id}' \
-  --header 'Content-Type: application/json' \
-  --header 'x-authorization: Token {your_token_here}'
-```
+1. Open HACS in Home Assistant and add this repository as a custom integration repository.
+2. Search for **Victron Cloud** and install the integration.
+3. Restart Home Assistant when prompted.
 
-## Home Assistant integration
-I’ve shared my anonymized configuration.yaml file. If you want to use it, you’ll need to:
-1. Set your site ID and token.
-2. Adjust the device number (in my case, it’s mostly set to 291) to match the one shown in the Victron VRM portal → Device List. There, each connected device has a specific instance number.
+Alternatively you can copy the `custom_components/victron_cloud` directory into your Home Assistant `config/custom_components` folder manually. Restart Home Assistant afterwards.
 
-I used ChatGPT to help generate the configuration. It wasn’t without its challenges and time-consuming tweaks, but in the end it produced a working setup.
-You might not be interested in monitoring all the metrics I included, and there’s no guarantee that everything will work out-of-the-box, so I suggest adding one part at a time and testing as you go.
-The configuration creates sensors that you can then use in Home Assistant to display data via widgets.
+## Initial setup
 
-WHERE IT STARDED
-https://community.victronenergy.com/t/api-rest-values-mapping/9430
+1. In Home Assistant go to **Settings → Devices & Services → Add Integration** and search for **Victron Cloud**.
+2. Enter your VRM API token when prompted. The integration validates the token and retrieves the installations you can access.
+3. Select the installation you want to monitor and provide the GX device instance number shown in the VRM Device List.
+4. Finish the flow to create the config entry. Home Assistant stores the token securely in `.storage` and creates the default set of sensors.
 
+### Available sensors
+
+By default the integration creates the following entities (you can enable/disable them later in the options flow):
+
+| Entity | Description | Source attribute |
+| ------ | ----------- | ---------------- |
+| `sensor.victron_solar_power` | PV array power in watts | Attribute 442 |
+| `sensor.victron_solar_voltage` | PV array voltage in volts | Attribute 86 |
+| `sensor.victron_solar_current` | Derived PV array current | 442 / 86 |
+| `sensor.victron_battery_current` | Battery current in amperes | Attribute 82 |
+| `sensor.victron_battery_voltage` | Battery voltage in volts | Attribute 81 |
+| `sensor.victron_battery_state` | Battery charge mode | Attribute 85 |
+| `sensor.victron_battery_power` | Derived battery power | 81 × 82 |
+| `sensor.victron_load_current` | DC load current | Attribute 242 |
+| `sensor.victron_load_state` | DC load state | Attribute 241 |
+| `sensor.victron_load_power` | Derived DC load power | 81 × 242 |
+| `sensor.victron_solar_energy_today` | Solar energy produced today (kWh) | Attribute 94 |
+
+You can adjust the list of sensors and the polling interval from the integration options menu.
+
+## Re-authentication
+
+If the VRM API token expires or is revoked you will be prompted to re-authenticate. Provide a new API token in the flow and the integration will update the stored credentials and reload automatically.
+
+## Development
+
+The file `victron_extracted_data_formatted.csv` contains a comprehensive mapping of VRM attribute IDs that was used while building the integration. It can be used as a reference for extending the integration with additional sensors.
+
+## Credits
+
+- Victron Energy for providing the VRM API
+- The Home Assistant community for tooling and examples that inspired this integration

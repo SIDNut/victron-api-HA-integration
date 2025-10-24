@@ -1,0 +1,57 @@
+{
+  "config": {
+    "title": "Victron Cloud",
+    "step": {
+      "user": {
+        "title": "Connect to Victron Cloud",
+        "description": "Create an API token in the Victron VRM portal under **My Account → Integrations**. Paste the token below to continue.",
+        "data": {
+          "api_token": "API token"
+        }
+      },
+      "installation": {
+        "title": "Select installation",
+        "description": "Choose the installation you want to monitor and provide the GX device instance number from the VRM Device List.",
+        "data": {
+          "installation_id": "Installation",
+          "device_instance": "Device instance"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect to Victron Cloud",
+        "description": "The existing API token is no longer valid. Enter a new token from the Victron VRM portal.",
+        "data": {
+          "api_token": "API token"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The API token was rejected. Please verify it and try again.",
+      "cannot_connect": "Could not connect to the Victron API. Please try again later.",
+      "no_installations": "No installations were found for this token.",
+      "invalid_installation": "Select a valid installation.",
+      "invalid_device_instance": "Enter a numeric device instance.",
+      "select_sensor": "Select at least one sensor.",
+      "interval_too_short": "Choose a scan interval of at least 30 seconds."
+    },
+    "abort": {
+      "reauth_successful": "Authentication updated successfully."
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "title": "Victron Cloud options",
+        "description": "Select which sensors to create and how often they should update.",
+        "data": {
+          "sensors": "Sensors",
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "select_sensor": "Select at least one sensor.",
+      "interval_too_short": "Choose a scan interval of at least 30 seconds."
+    }
+  }
+}
